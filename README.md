@@ -3,7 +3,7 @@
 Projet open source permettant d'envoyer le flux vidéo d'une caméra CSI (module Pi Camera)
 branchée sur un **Raspberry Pi Zero 2** vers l'application **Maison** d'Apple via **HomeKit**.
 
-L'ajout se fait par la saisie d'un code à 6 chiffres (QRcode en cours de développement), exactement comme une caméra du commerce, et le visionnage en direct est totalement transparent dans l'application Maison.
+L'ajout se fait par la saisie d'un code à 8 chiffres ou le scan d'un QRcode, exactement comme une caméra du commerce, et le visionnage en direct est totalement transparent dans l'application Maison.
 
 ## Fonctionnement
 
@@ -56,7 +56,7 @@ sudo ./install.sh
 
 Le script installe les dépendances (`ffmpeg`, `rpicam-apps`, `avahi-daemon`…), crée un
 environnement virtuel Python, génère un code d'appairage et active un service systemd qui
-démarre automatiquement au boot.
+démarre automatiquement au boot durée ~ 3 min.
 
 ## Appairage dans l'application Maison
 
@@ -65,10 +65,12 @@ démarre automatiquement au boot.
    ```bash
    journalctl -u pi0tohomekit -f
    ```
+Ou utilisez le core d'appairage indiqué dans le script d'installation.
 
 2. Sur l'iPhone/iPad, ouvrez l'app **Maison** → **+** → **Ajouter un accessoire**.
-3. Scannez le QR code affiché dans le terminal.
-4. La caméra apparaît comme un accessoire natif ; ouvrez sa vignette pour voir le flux en direct.
+3. Scannez le QR code affiché dans le terminal (ou plus d'option, la caméra apparait et vous demande le code).
+4. Acceptez que ce n'est pas un appareil officiel HomeKit.
+5. La caméra apparaît comme un accessoire natif ; ouvrez sa vignette pour voir le flux en direct.
 
 ## Configuration
 
