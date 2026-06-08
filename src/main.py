@@ -109,6 +109,8 @@ def main():
     advanced_cfg = config.get("advanced", {})
     homekit_cfg = config.get("homekit", {})
 
+    detection_cfg = config.get("detection", {})
+
     # Fusionne les réglages caméra/avancés transmis à l'accessoire.
     camera_config = {**camera_cfg, **advanced_cfg}
 
@@ -135,6 +137,7 @@ def main():
         driver,
         homekit_cfg.get("name", "Pi Camera"),
         camera_config,
+        detection_cfg,
     )
     driver.add_accessory(accessory=accessory)
 
