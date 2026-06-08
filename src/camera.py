@@ -4,15 +4,10 @@ La diffusion repose sur ``rpicam-vid`` (encodage H.264 matériel via libcamera s
 Raspberry Pi OS Bookworm) dont la sortie est redirigée vers ``ffmpeg`` en mode
 ``-c:v copy`` : FFmpeg ne fait que l'emballage SRTP attendu par HomeKit, sans
 réencodage. Cela maintient une charge CPU minimale, adaptée au Raspberry Pi Zero 2.
-
-La détection de personne tourne en tâche asyncio de fond. Elle prend des snapshots via
-``rpicam-jpeg`` uniquement lorsqu'aucun flux HomeKit n'est actif (``_active_streams == 0``),
-car ``rpicam-vid`` monopolise la caméra pendant le streaming.
 """
 
 import asyncio
 import logging
-import os
 import subprocess
 
 from pyhap.camera import (
@@ -20,8 +15,6 @@ from pyhap.camera import (
     VIDEO_CODEC_PARAM_LEVEL_TYPES,
     VIDEO_CODEC_PARAM_PROFILE_ID_TYPES,
 )
-
-from .detection import Detector, has_motion, jpeg_to_gray
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +31,6 @@ _LEVEL_TO_RPICAM = {
     VIDEO_CODEC_PARAM_LEVEL_TYPES["TYPE3_2"]: "4",
     VIDEO_CODEC_PARAM_LEVEL_TYPES["TYPE4_0"]: "4",
 }
-
-_MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 
 
 def build_options(address, resolutions):
@@ -81,34 +72,14 @@ def build_options(address, resolutions):
 class PiCamera(Camera):
     """Caméra HomeKit diffusant le module CSI du Raspberry Pi."""
 
-    def __init__(self, options, driver, name, camera_config, detection_config=None):
-        """:param camera_config: sections ``camera``/``advanced`` fusionnées du config.
-        :param detection_config: section ``detection`` du config (ou {} si absente).
-        """
+    def __init__(self, options, driver, name, camera_config):
+        """:param camera_config: section ``camera``/``advanced`` du fichier de config."""
         super().__init__(options, driver, name)
         self._camera_config = camera_config
-        self._detection_cfg = detection_config or {}
-        # Nombre de flux HomeKit actuellement actifs (rpicam-vid en cours).
-        # La boucle de détection ne prend pas de snapshot tant que ce compteur > 0.
-        self._active_streams = 0
-
-        # Service Motion Sensor HomeKit — toujours créé, même si mode: off, afin
-        # que l'accessoire reste stable lors des changements de config.
-        motion_service = self.add_preload_service("MotionSensor")
-        self._motion_char = motion_service.get_characteristic("MotionDetected")
-        self._motion_char.set_value(False, should_notify=False)
-
         # Note : on ne crée pas notre propre dictionnaire de sessions. pyhap gère
         # déjà ``self.sessions`` en interne (un dict ``session_info`` par session,
         # contenant notamment ``stream_idx``). On stocke nos processus directement
         # dans ce ``session_info``, comme le fait l'implémentation par défaut.
-
-    # -- Cycle de vie de l'accessoire ----------------------------------------------
-
-    async def run(self):
-        """Appelée par pyhap au démarrage du driver ; lance la détection en fond."""
-        if self._detection_cfg.get("mode", "off") != "off":
-            asyncio.create_task(self._run_detection())
 
     # -- Construction des commandes ------------------------------------------------
 
@@ -230,7 +201,6 @@ class PiCamera(Camera):
         # self.sessions, qui appartient à pyhap.
         session_info["rpicam_proc"] = rpicam_proc
         session_info["ffmpeg_proc"] = ffmpeg_proc
-        self._active_streams += 1
         return True
 
     async def stop_stream(self, session_info):
@@ -247,7 +217,6 @@ class PiCamera(Camera):
                 proc.terminate()
             except ProcessLookupError:
                 pass
-        self._active_streams = max(0, self._active_streams - 1)
 
     def reconfigure_stream(self, session_info, stream_config):
         # La reconfiguration à chaud n'est pas nécessaire pour un flux en direct :
@@ -275,7 +244,7 @@ class PiCamera(Camera):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=8.0)
+            stdout, stderr = await proc.communicate()
             if proc.returncode == 0 and stdout:
                 return stdout
             logger.warning(
@@ -283,82 +252,7 @@ class PiCamera(Camera):
                 proc.returncode,
                 stderr.decode(errors="replace").strip(),
             )
-        except asyncio.TimeoutError:
-            logger.warning("rpicam-jpeg : délai d'attente dépassé")
         except Exception:
             # La caméra est probablement déjà occupée par un flux en cours.
             logger.exception("Capture de vignette impossible")
         return b""
-
-    # -- Boucle de détection -------------------------------------------------------
-
-    async def _run_detection(self):
-        """Boucle asyncio de détection de personne (tâche de fond)."""
-        cfg = self._detection_cfg
-        mode = cfg.get("mode", "off")
-        sensitivity = float(cfg.get("sensitivity", 25))
-        confidence = float(cfg.get("confidence", 0.5))
-        cooldown = float(cfg.get("cooldown", 15))
-        interval = float(cfg.get("interval", 3))
-
-        detector = None
-        if mode in ("hybrid", "person"):
-            model_path = os.path.join(_MODELS_DIR, "efficientdet_lite0_uint8.tflite")
-            labels_path = os.path.join(_MODELS_DIR, "coco_labels.txt")
-            try:
-                detector = Detector(model_path, confidence, labels_path)
-            except Exception:
-                logger.exception(
-                    "Impossible de charger le modèle TFLite — mode dégradé vers 'motion'"
-                )
-                mode = "motion"
-
-        loop = asyncio.get_running_loop()
-        prev_gray = None
-        cooldown_task: asyncio.Task | None = None
-
-        async def _reset_motion():
-            await asyncio.sleep(cooldown)
-            self._motion_char.set_value(False, should_notify=True)
-            logger.info("Motion Sensor remis à zéro (cooldown écoulé)")
-
-        logger.info(
-            "Détection démarrée (mode=%s, interval=%.0fs, sensitivity=%.0f, cooldown=%.0fs)",
-            mode, interval, sensitivity, cooldown,
-        )
-
-        while True:
-            await asyncio.sleep(interval)
-
-            if self._active_streams > 0:
-                # rpicam-vid tient la caméra ; rpicam-jpeg échouerait.
-                continue
-
-            jpeg = await self.async_get_snapshot({"image-width": 640, "image-height": 480})
-            if not jpeg:
-                continue
-
-            curr_gray = await loop.run_in_executor(None, jpeg_to_gray, jpeg)
-            motion = has_motion(prev_gray, curr_gray, sensitivity)
-            prev_gray = curr_gray
-
-            if mode == "motion":
-                detected = motion
-            elif mode == "person":
-                detected = bool(
-                    detector and await loop.run_in_executor(None, detector.detect_person, jpeg)
-                )
-            else:  # hybrid : mouvement comme pré-filtre, IA comme confirmation
-                if not motion:
-                    detected = False
-                elif detector:
-                    detected = await loop.run_in_executor(None, detector.detect_person, jpeg)
-                else:
-                    detected = True  # pas de modèle : le mouvement suffit
-
-            if detected:
-                self._motion_char.set_value(True, should_notify=True)
-                logger.info("Détection → notification HomeKit (Motion Sensor actif)")
-                if cooldown_task and not cooldown_task.done():
-                    cooldown_task.cancel()
-                cooldown_task = asyncio.create_task(_reset_motion())
