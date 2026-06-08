@@ -25,13 +25,38 @@ _CONFIG_CANDIDATES = (
     "/opt/pi0tohomekit/config.yaml",
 )
 
-# Résolutions annoncées à HomeKit : [largeur, hauteur, fps].
+# Résolutions de base annoncées à HomeKit : [largeur, hauteur, fps].
+# Elles sont filtrées/plafonnées par la configuration (cf. build_resolutions).
 SUPPORTED_RESOLUTIONS = [
     [1920, 1080, 30],
     [1280, 720, 30],
     [640, 480, 30],
     [320, 240, 15],
 ]
+
+
+def build_resolutions(camera_cfg):
+    """Plafonne les résolutions annoncées selon config.yaml.
+
+    On n'annonce à HomeKit que les résolutions dont la largeur et la hauteur ne
+    dépassent pas ``width``/``height`` de la config, et le fps de chaque entrée
+    est lui-même plafonné par ``fps``. HomeKit ne pourra donc pas demander un
+    flux plus lourd que ce que le matériel supporte confortablement.
+    """
+    max_w = int(camera_cfg.get("width", 1280))
+    max_h = int(camera_cfg.get("height", 720))
+    max_fps = int(camera_cfg.get("fps", 30))
+
+    resolutions = [
+        [w, h, min(fps, max_fps)]
+        for w, h, fps in SUPPORTED_RESOLUTIONS
+        if w <= max_w and h <= max_h
+    ]
+    # Toujours annoncer au moins une résolution : si la config est plus petite que
+    # toutes les valeurs de base, on annonce exactement la résolution demandée.
+    if not resolutions:
+        resolutions = [[max_w, max_h, max_fps]]
+    return resolutions
 
 
 def load_config():
@@ -90,7 +115,9 @@ def main():
     address = get_local_address()
     logger.info("Adresse IP locale détectée : %s", address)
 
-    options = build_options(address, SUPPORTED_RESOLUTIONS)
+    resolutions = build_resolutions(camera_config)
+    logger.info("Résolutions annoncées à HomeKit : %s", resolutions)
+    options = build_options(address, resolutions)
 
     persist_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", "accessory.state"

@@ -87,9 +87,15 @@ class PiCamera(Camera):
         cfg = self._camera_config
         width = stream_config["width"]
         height = stream_config["height"]
+        # On plafonne fps et bitrate par la config : HomeKit négocie parfois des
+        # valeurs supérieures à ce que le Pi Zero 2 encode/transmet sans saccades.
         fps = stream_config["fps"]
+        if cfg.get("fps"):
+            fps = min(fps, int(cfg["fps"]))
         # HomeKit fournit le bitrate maximal en kbit/s ; rpicam-vid attend des bit/s.
         bitrate = int(stream_config["v_max_bitrate"]) * 1000
+        if cfg.get("bitrate"):
+            bitrate = min(bitrate, int(cfg["bitrate"]))
 
         profile = _PROFILE_TO_RPICAM.get(
             stream_config.get("v_profile_id"), cfg.get("profile", "baseline")
