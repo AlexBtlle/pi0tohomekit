@@ -4,9 +4,9 @@
 camera:
   width: 1280          # Largeur par défaut de la capture
   height: 720          # Hauteur par défaut de la capture
-  fps: 30              # Images par seconde
-  bitrate: 2000000     # Débit vidéo en bits/s (2 Mbit/s ; gardez <= 4 Mbit/s sur Pi Zero 2)
-  rotation: 0          # Rotation de l'image : 0, 90, 180 ou 270
+  fps: 20              # Images par seconde
+  bitrate: 4000000     # Débit vidéo en bits/s (gardez <= 4 Mbit/s sur Pi Zero 2)
+  rotation: 0          # Rotation de l'image : 0 ou 180 (90/270 non gérés par libcamera)
   autofocus: manual    # manual (recommandé module v3) | continuous | auto
 
 homekit:

@@ -51,20 +51,33 @@ démarre automatiquement au boot.
 
 ## Configuration
 
-Les réglages se trouvent dans `config.yaml` (copié dans `/opt/pi0tohomekit/config.yaml`
-lors de l'installation) :
+> ⚠️ **Important** : le service lit **`/opt/pi0tohomekit/config.yaml`** (et non la copie
+> du dépôt git). C'est ce fichier-là qu'il faut éditer, avec `sudo` :
+> `sudo nano /opt/pi0tohomekit/config.yaml`. Modifier le `config.yaml` cloné dans votre
+> dossier personnel n'a aucun effet sur le service. Lors d'une mise à jour du code
+> (`sudo cp -r src /opt/pi0tohomekit/`), votre configuration dans `/opt` est préservée.
+
+Réglages disponibles :
 
 | Section    | Clé        | Description                                              |
 |------------|------------|----------------------------------------------------------|
-| `camera`   | `width`, `height`, `fps` | Résolution et fluidité de la capture        |
-| `camera`   | `bitrate`  | Débit vidéo en bits/s (≤ 4 Mbit/s recommandé)            |
-| `camera`   | `rotation` | Rotation de l'image : 0, 90, 180, 270                    |
+| `camera`   | `width`, `height`, `fps` | Plafond de résolution et de fluidité (cf. note ci-dessous) |
+| `camera`   | `bitrate`  | Débit vidéo en bits/s (≤ 4 Mbit/s recommandé sur Pi Zero 2) |
+| `camera`   | `rotation` | Rotation de l'image : `0` ou `180` (90/270 non gérés par libcamera) |
+| `camera`   | `autofocus`| Mode autofocus module v3 : `manual` (recommandé), `continuous`, `auto` |
 | `homekit`  | `name`     | Nom affiché dans l'app Maison                            |
 | `homekit`  | `pincode`  | Code d'appairage `XXX-XX-XXX` (généré si vide)           |
 | `homekit`  | `port`     | Port TCP du pont HomeKit                                 |
 | `advanced` | `profile`, `level` | Profil et niveau H.264 par défaut               |
 
 Après modification : `sudo systemctl restart pi0tohomekit`.
+
+`width`, `height` et `fps` plafonnent ce que le flux peut atteindre : seules les
+résolutions inférieures ou égales sont annoncées à HomeKit, et `fps`/`bitrate` bornent
+ce que la caméra encode même si l'app Maison demande davantage. C'est le levier principal
+contre les saccades sur Pi Zero 2 (essayez 1280×720 à 20 fps). Si vous changez ces
+valeurs, supprimez l'appairage et ré-ajoutez la caméra dans Maison pour que les nouvelles
+capacités soient prises en compte.
 
 ## Lancement manuel (développement / débogage)
 
