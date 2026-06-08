@@ -126,6 +126,12 @@ class PiCamera(Camera):
         return cmd
 
     def _ffmpeg_cmd(self, stream_config):
+        # pyhap ne décode pas v_payload_type : il le transmet sous forme d'octets
+        # bruts (p. ex. b'c' pour 99). On le convertit en entier pour ffmpeg.
+        payload_type = stream_config.get("v_payload_type", 99)
+        if isinstance(payload_type, (bytes, bytearray)):
+            payload_type = int.from_bytes(payload_type, "little")
+
         return [
             "ffmpeg",
             "-hide_banner",
@@ -134,7 +140,7 @@ class PiCamera(Camera):
             "-i", "-",
             "-c:v", "copy",
             "-an",
-            "-payload_type", str(stream_config["v_payload_type"]),
+            "-payload_type", str(payload_type),
             "-ssrc", str(stream_config["v_ssrc"]),
             "-f", "rtp",
             "-srtp_out_suite", "AES_CM_128_HMAC_SHA1_80",
@@ -188,7 +194,9 @@ class PiCamera(Camera):
         session_info["ffmpeg_proc"] = ffmpeg_proc
         return True
 
-    def stop_stream(self, session_info):
+    async def stop_stream(self, session_info):
+        # pyhap fait ``await self.stop_stream(...)`` : la méthode doit être une
+        # coroutine, sinon ``await None`` lève une TypeError.
         session_id = session_info["id"]
         logger.info("Arrêt du flux %s", session_id)
         # On termine ffmpeg avant rpicam-vid pour éviter une écriture sur pipe fermé.
