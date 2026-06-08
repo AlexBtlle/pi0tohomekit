@@ -115,6 +115,12 @@ class PiCamera(Camera):
         if rotation in (90, 180, 270):
             cmd += ["--rotation", str(rotation)]
 
+        # Le module v3 (autofocus) initialise l'AF avant de démarrer le flux, ce
+        # qui dépasse le délai d'attente de HomeKit et provoque un écran noir.
+        # En mode manuel l'image commence immédiatement.
+        autofocus = cfg.get("autofocus", "manual")
+        cmd += ["--autofocus-mode", autofocus]
+
         cmd += ["-o", "-"]
         return cmd
 
@@ -201,12 +207,14 @@ class PiCamera(Camera):
     async def get_snapshot(self, image_size):
         width = image_size.get("image-width", 1280)
         height = image_size.get("image-height", 720)
+        autofocus = self._camera_config.get("autofocus", "manual")
         cmd = [
             "rpicam-jpeg",
             "--nopreview",
             "-t", "1",
             "--width", str(width),
             "--height", str(height),
+            "--autofocus-mode", autofocus,
             "-o", "-",
         ]
         try:
