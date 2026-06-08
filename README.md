@@ -1,5 +1,7 @@
 # pi0tohomekit
 
+*[English version](README.en_US.md)*
+
 Projet open source permettant d'envoyer le flux vidéo d'une caméra CSI (module Pi Camera)
 branchée sur un **Raspberry Pi Zero 2** vers l'application **Maison** d'Apple via **HomeKit**.
 
