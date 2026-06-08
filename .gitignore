@@ -10,10 +10,6 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
-# Modèles TFLite téléchargés à l'install (ne pas committer)
-models/*.tflite
-models/*.txt
-
 # Divers
 *.h264
 *.log
