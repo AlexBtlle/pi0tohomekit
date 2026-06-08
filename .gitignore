@@ -1,0 +1,15 @@
+# État d'appairage HomeKit (contient les clés de pairing — ne jamais committer)
+accessory.state
+
+# Environnement virtuel Python
+venv/
+.venv/
+
+# Caches Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Divers
+*.h264
+*.log

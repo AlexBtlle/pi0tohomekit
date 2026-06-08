@@ -1,0 +1,15 @@
+[Unit]
+Description=pi0tohomekit - pont camera HomeKit pour Raspberry Pi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/pi0tohomekit
+ExecStart=/opt/pi0tohomekit/venv/bin/python -m src.main
+Restart=on-failure
+RestartSec=5
+User=__USER__
+
+[Install]
+WantedBy=multi-user.target
