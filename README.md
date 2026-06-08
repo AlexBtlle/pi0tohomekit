@@ -37,6 +37,10 @@ fonctionne. En pratique :
 > `--autofocus-mode`. Par défaut `autofocus: none` est utilisé et aucune option AF
 > n'est transmise à `rpicam-vid`. Ne mettez `autofocus: manual` que si vous utilisez
 > un **module Pi Camera v3**.
+>
+> Les modules **génériques/clones** (notamment OV5647) ne sont pas toujours auto-détectés :
+> si `rpicam-hello --list-cameras` ne les voit pas, déclarez le `dtoverlay` correspondant
+> dans `/boot/firmware/config.txt` (voir [Dépannage](#dépannage)).
 
 ## Prérequis
 
@@ -111,10 +115,22 @@ Le QR code et le code d'appairage s'affichent directement dans le terminal.
 
 ## Dépannage
 
+- **Caméra générique non détectée** (flux et vignette en échec, `rpicam-jpeg`/`rpicam-vid`
+  qui renvoient une erreur) : les modules CSI génériques/clones ne sont pas toujours
+  auto-détectés sous Bookworm. Vérifiez d'abord avec `rpicam-hello --list-cameras` ; si la
+  liste est vide, déclarez le capteur explicitement dans `/boot/firmware/config.txt` :
+
+  ```ini
+  camera_auto_detect=0
+  dtoverlay=ov5647   # ou imx219, imx477, imx708… selon le capteur
+  ```
+
+  puis `sudo reboot`. Re-testez ensuite `rpicam-hello --list-cameras`.
 - **La caméra n'apparaît pas dans Maison** : vérifiez que `avahi-daemon` tourne et que le Pi
   et l'appareil Apple sont sur le même réseau (`avahi-browse -rt _hap._tcp`).
 - **Pas de flux / écran noir** : testez la chaîne caméra seule avec
-  `rpicam-vid -t 5000 --codec h264 -o test.h264`.
+  `rpicam-vid -t 5000 --codec h264 -o test.h264`. Les erreurs de `rpicam-vid` et
+  `rpicam-jpeg` apparaissent aussi dans `journalctl -u pi0tohomekit`.
 - **Réappairer depuis zéro** : arrêtez le service, supprimez `/opt/pi0tohomekit/accessory.state`,
   puis redémarrez le service.
 
