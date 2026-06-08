@@ -76,9 +76,10 @@ class PiCamera(Camera):
         """:param camera_config: section ``camera``/``advanced`` du fichier de config."""
         super().__init__(options, driver, name)
         self._camera_config = camera_config
-        # Suivi des processus par identifiant de session afin de gérer plusieurs
-        # flux HomeKit simultanés (plusieurs appareils Apple).
-        self.sessions = {}
+        # Note : on ne crée pas notre propre dictionnaire de sessions. pyhap gère
+        # déjà ``self.sessions`` en interne (un dict ``session_info`` par session,
+        # contenant notamment ``stream_idx``). On stocke nos processus directement
+        # dans ce ``session_info``, comme le fait l'implémentation par défaut.
 
     # -- Construction des commandes ------------------------------------------------
 
@@ -128,7 +129,7 @@ class PiCamera(Camera):
         return [
             "ffmpeg",
             "-hide_banner",
-            "-loglevel", "error",
+            "-loglevel", "warning",
             "-f", "h264",
             "-i", "-",
             "-c:v", "copy",
@@ -159,6 +160,8 @@ class PiCamera(Camera):
         # On utilise subprocess.Popen (et non asyncio) pour relier directement la
         # sortie de rpicam-vid à l'entrée de ffmpeg, comme un pipe shell. Popen
         # rend la main immédiatement ; les processus tournent en arrière-plan.
+        # stderr de ffmpeg est hérité du service (→ journald) afin que les erreurs
+        # d'encodage/streaming soient visibles via journalctl.
         try:
             rpicam_proc = subprocess.Popen(
                 rpicam_cmd,
@@ -169,7 +172,7 @@ class PiCamera(Camera):
                 ffmpeg_cmd,
                 stdin=rpicam_proc.stdout,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stderr=None,
             )
         except Exception:
             logger.exception("Échec du lancement du flux %s", session_id)
@@ -178,18 +181,19 @@ class PiCamera(Camera):
         # Permet à rpicam-vid de recevoir un SIGPIPE si ffmpeg se termine.
         rpicam_proc.stdout.close()
 
-        self.sessions[session_id] = (rpicam_proc, ffmpeg_proc)
+        # On stocke les processus dans le session_info géré par pyhap : le même
+        # objet sera transmis à stop_stream. Surtout ne pas réutiliser
+        # self.sessions, qui appartient à pyhap.
+        session_info["rpicam_proc"] = rpicam_proc
+        session_info["ffmpeg_proc"] = ffmpeg_proc
         return True
 
     def stop_stream(self, session_info):
         session_id = session_info["id"]
-        procs = self.sessions.pop(session_id, None)
-        if not procs:
-            return
-
         logger.info("Arrêt du flux %s", session_id)
         # On termine ffmpeg avant rpicam-vid pour éviter une écriture sur pipe fermé.
-        for proc in reversed(procs):
+        for key in ("ffmpeg_proc", "rpicam_proc"):
+            proc = session_info.get(key)
             if proc is None or proc.poll() is not None:
                 continue
             try:
@@ -204,7 +208,11 @@ class PiCamera(Camera):
 
     # -- Vignette ------------------------------------------------------------------
 
-    async def get_snapshot(self, image_size):
+    async def async_get_snapshot(self, image_size):
+        # pyhap appelle ``async_get_snapshot`` (coroutine) en priorité sur
+        # ``get_snapshot`` (cf. hap_handler.py). Définir une coroutine ici évite
+        # le « coroutine has no len() » qui survenait quand pyhap exécutait une
+        # méthode async via run_in_executor.
         width = image_size.get("image-width", 1280)
         height = image_size.get("image-height", 720)
         autofocus = self._camera_config.get("autofocus", "manual")
