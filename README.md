@@ -3,9 +3,7 @@
 Projet open source permettant d'envoyer le flux vidéo d'une caméra CSI (module Pi Camera)
 branchée sur un **Raspberry Pi Zero 2** vers l'application **Maison** d'Apple via **HomeKit**.
 
-L'ajout se fait par simple scan d'un QR code, exactement comme une caméra du commerce
-(par exemple une caméra Eve), et le visionnage en direct est totalement transparent dans
-l'application Maison.
+L'ajout se fait par la saisie d'un code à 6 chiffres (QRcode en cours de développement), exactement comme une caméra du commerce, et le visionnage en direct est totalement transparent dans l'application Maison.
 
 ## Fonctionnement
 
@@ -44,9 +42,9 @@ fonctionne. En pratique :
 
 ## Prérequis
 
-- Raspberry Pi Zero 2 (ou modèle plus récent) sous **Raspberry Pi OS Bookworm**.
-- Un module caméra CSI raccordé et activé (Bookworm le détecte automatiquement).
-- Le Pi et l'appareil Apple sur le **même réseau local**.
+- Raspberry Pi Zero 2 sous **Raspberry Pi OS Bookworm**.
+- Un module caméra CSI raccordé et activé.
+- Le Pi et l'appareil Apple sur le **même réseau local** (AppleTV ou HomePod).
 
 ## Installation
 
