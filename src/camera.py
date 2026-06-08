@@ -168,19 +168,20 @@ class PiCamera(Camera):
         ffmpeg_cmd = self._ffmpeg_cmd(stream_config)
 
         logger.info("Démarrage du flux %s", session_id)
-        logger.debug("rpicam-vid: %s", " ".join(rpicam_cmd))
+        logger.info("rpicam-vid: %s", " ".join(rpicam_cmd))
         logger.debug("ffmpeg: %s", " ".join(ffmpeg_cmd))
 
         # On utilise subprocess.Popen (et non asyncio) pour relier directement la
         # sortie de rpicam-vid à l'entrée de ffmpeg, comme un pipe shell. Popen
         # rend la main immédiatement ; les processus tournent en arrière-plan.
-        # stderr de ffmpeg est hérité du service (→ journald) afin que les erreurs
-        # d'encodage/streaming soient visibles via journalctl.
+        # Les stderr de rpicam-vid ET de ffmpeg sont hérités du service (→ journald)
+        # afin que toute erreur de capture/encodage/streaming soit visible via
+        # journalctl. Sans cela, une panne caméra restait invisible.
         try:
             rpicam_proc = subprocess.Popen(
                 rpicam_cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                stderr=None,
             )
             ffmpeg_proc = subprocess.Popen(
                 ffmpeg_cmd,
@@ -241,12 +242,16 @@ class PiCamera(Camera):
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
             )
-            stdout, _ = await proc.communicate()
+            stdout, stderr = await proc.communicate()
             if proc.returncode == 0 and stdout:
                 return stdout
-            logger.warning("rpicam-jpeg a échoué (code %s)", proc.returncode)
+            logger.warning(
+                "rpicam-jpeg a échoué (code %s) : %s",
+                proc.returncode,
+                stderr.decode(errors="replace").strip(),
+            )
         except Exception:
             # La caméra est probablement déjà occupée par un flux en cours.
             logger.exception("Capture de vignette impossible")
