@@ -1,3 +1,7 @@
 HAP-python[QRCode]>=4.9.0
 PyYAML>=6.0
 qrcode[pil]>=7.4
+numpy>=1.24
+# tflite-runtime et ai-edge-litert sont installés par install.sh (pas via pip direct
+# car la disponibilité des wheels varie selon l'architecture ARM).
+# Pour une install manuelle : pip install ai-edge-litert
