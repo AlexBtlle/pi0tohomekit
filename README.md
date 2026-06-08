@@ -19,6 +19,25 @@ implémentation Python du protocole HomeKit Accessory Protocol. Le pont :
 
 Cette chaîne maintient une charge CPU minimale, adaptée aux 512 Mo du Raspberry Pi Zero 2.
 
+## Caméras compatibles
+
+Tout module caméra CSI supporté par **libcamera** sous Raspberry Pi OS Bookworm
+fonctionne. En pratique :
+
+| Module | Capteur | Autofocus | Réglage `autofocus` |
+|--------|---------|-----------|---------------------|
+| Pi Camera v1 | OV5647 | Non (fixe) | `none` |
+| Pi Camera v2 | IMX219 | Non (fixe) | `none` |
+| Pi Camera v3 | IMX708 | Oui | **`manual`** |
+| Pi HQ Camera | IMX477 | Non (fixe) | `none` |
+| Pi Global Shutter | IMX296 | Non (fixe) | `none` |
+| Génériques CSI (fisheye, grand-angle…) | OV5647 / IMX219 | Non (fixe) | `none` |
+
+> Les caméras à focus fixe (toutes sauf la v3) **ne supportent pas** l'option
+> `--autofocus-mode`. Par défaut `autofocus: none` est utilisé et aucune option AF
+> n'est transmise à `rpicam-vid`. Ne mettez `autofocus: manual` que si vous utilisez
+> un **module Pi Camera v3**.
+
 ## Prérequis
 
 - Raspberry Pi Zero 2 (ou modèle plus récent) sous **Raspberry Pi OS Bookworm**.
@@ -64,7 +83,7 @@ Réglages disponibles :
 | `camera`   | `width`, `height`, `fps` | Plafond de résolution et de fluidité (cf. note ci-dessous) |
 | `camera`   | `bitrate`  | Débit vidéo en bits/s (≤ 4 Mbit/s recommandé sur Pi Zero 2) |
 | `camera`   | `rotation` | Rotation de l'image : `0` ou `180` (90/270 non gérés par libcamera) |
-| `camera`   | `autofocus`| Mode autofocus module v3 : `manual` (recommandé), `continuous`, `auto` |
+| `camera`   | `autofocus`| `none` pour toute caméra à focus fixe (défaut) ; `manual` uniquement pour Pi Camera v3 |
 | `homekit`  | `name`     | Nom affiché dans l'app Maison                            |
 | `homekit`  | `pincode`  | Code d'appairage `XXX-XX-XXX` (généré si vide)           |
 | `homekit`  | `port`     | Port TCP du pont HomeKit                                 |

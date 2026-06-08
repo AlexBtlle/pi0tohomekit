@@ -122,11 +122,13 @@ class PiCamera(Camera):
         if rotation in (90, 180, 270):
             cmd += ["--rotation", str(rotation)]
 
-        # Le module v3 (autofocus) initialise l'AF avant de démarrer le flux, ce
-        # qui dépasse le délai d'attente de HomeKit et provoque un écran noir.
-        # En mode manuel l'image commence immédiatement.
-        autofocus = cfg.get("autofocus", "manual")
-        cmd += ["--autofocus-mode", autofocus]
+        # --autofocus-mode n'existe que sur les caméras à autofocus (Pi Camera v3).
+        # Sur toute caméra à focus fixe (v1, v2, HQ, génériques), passer cette
+        # option fait planter rpicam-vid. On ne l'ajoute que si la config l'active
+        # explicitement (valeur différente de "none" et non vide).
+        autofocus = cfg.get("autofocus", "none")
+        if autofocus and autofocus.lower() not in ("none", "disabled", "false"):
+            cmd += ["--autofocus-mode", autofocus]
 
         cmd += ["-o", "-"]
         return cmd
@@ -229,16 +231,12 @@ class PiCamera(Camera):
         # méthode async via run_in_executor.
         width = image_size.get("image-width", 1280)
         height = image_size.get("image-height", 720)
-        autofocus = self._camera_config.get("autofocus", "manual")
-        cmd = [
-            "rpicam-jpeg",
-            "--nopreview",
-            "-t", "1",
-            "--width", str(width),
-            "--height", str(height),
-            "--autofocus-mode", autofocus,
-            "-o", "-",
-        ]
+        autofocus = self._camera_config.get("autofocus", "none")
+        cmd = ["rpicam-jpeg", "--nopreview", "-t", "1",
+               "--width", str(width), "--height", str(height)]
+        if autofocus and autofocus.lower() not in ("none", "disabled", "false"):
+            cmd += ["--autofocus-mode", autofocus]
+        cmd += ["-o", "-"]
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
