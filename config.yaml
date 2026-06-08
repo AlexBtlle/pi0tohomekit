@@ -1,0 +1,18 @@
+# Configuration de pi0tohomekit
+# Modifiez ces valeurs selon votre matériel et vos préférences.
+
+camera:
+  width: 1280          # Largeur par défaut de la capture
+  height: 720          # Hauteur par défaut de la capture
+  fps: 30              # Images par seconde
+  bitrate: 2000000     # Débit vidéo en bits/s (2 Mbit/s ; gardez <= 4 Mbit/s sur Pi Zero 2)
+  rotation: 0          # Rotation de l'image : 0, 90, 180 ou 270
+
+homekit:
+  name: "Pi Camera"    # Nom affiché dans l'application Maison
+  pincode: ""          # Code d'appairage XXX-XX-XXX (généré automatiquement par install.sh si vide)
+  port: 51826          # Port TCP du pont HomeKit
+
+advanced:
+  profile: baseline    # Profil H.264 : baseline | main | high
+  level: 4             # Niveau H.264
