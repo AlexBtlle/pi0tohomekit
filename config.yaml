@@ -7,7 +7,7 @@ camera:
   fps: 20              # Images par seconde
   bitrate: 4000000     # Débit vidéo en bits/s (gardez <= 4 Mbit/s sur Pi Zero 2)
   rotation: 0          # Rotation de l'image : 0 ou 180 (90/270 non gérés par libcamera)
-  autofocus: manual    # manual (recommandé module v3) | continuous | auto
+  autofocus: none      # none (focus fixe, défaut) | manual (Pi Camera v3) | continuous | auto
 
 homekit:
   name: "Pi Camera"    # Nom affiché dans l'application Maison
