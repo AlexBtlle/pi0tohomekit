@@ -1,4 +1,4 @@
-# pi0tohomekit
+# pi0 Camera Homekit
 
 *[English version](README.en_US.md)*
 
@@ -9,7 +9,7 @@ L'ajout se fait par la saisie d'un code à 8 chiffres ou le scan d'un QRcode, ex
 
 ## Fonctionnement
 
-`pi0tohomekit` s'appuie sur [HAP-python](https://github.com/ikalchev/HAP-python), une
+`pi0-Camera-HomeKiy` s'appuie sur [HAP-python](https://github.com/ikalchev/HAP-python), une
 implémentation Python du protocole HomeKit Accessory Protocol. Le pont :
 
 - s'annonce automatiquement sur le réseau via mDNS/Bonjour (détectable par l'app Maison) ;
@@ -51,8 +51,8 @@ fonctionne. En pratique :
 ## Installation
 
 ```bash
-git clone https://github.com/AlexBtlle/pi0tohomekit.git
-cd pi0tohomekit
+git clone https://github.com/AlexBtlle/pi0-Camera-HomeKit.git
+cd pi0-Camera-HomeKit
 sudo ./install.sh
 ```
 
