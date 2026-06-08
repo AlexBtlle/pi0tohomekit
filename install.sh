@@ -38,6 +38,28 @@ python3 -m venv "${INSTALL_DIR}/venv"
 "${INSTALL_DIR}/venv/bin/pip" install --upgrade pip
 "${INSTALL_DIR}/venv/bin/pip" install -r "${INSTALL_DIR}/requirements.txt"
 
+echo "==> Installation de la runtime TFLite (nécessaire pour la détection de personne)…"
+# ai-edge-litert est le successeur de tflite-runtime (dispo sur aarch64 Bookworm).
+"${INSTALL_DIR}/venv/bin/pip" install ai-edge-litert 2>/dev/null \
+    || "${INSTALL_DIR}/venv/bin/pip" install tflite-runtime 2>/dev/null \
+    || echo "    ⚠  Runtime TFLite non disponible — seul le mode 'motion' fonctionnera."
+
+echo "==> Téléchargement du modèle de détection de personne…"
+mkdir -p "${INSTALL_DIR}/models"
+MODEL_FILE="${INSTALL_DIR}/models/efficientdet_lite0_uint8.tflite"
+LABELS_FILE="${INSTALL_DIR}/models/coco_labels.txt"
+
+if [[ ! -f "${MODEL_FILE}" ]]; then
+    wget -q --show-progress -O "${MODEL_FILE}" \
+        'https://github.com/google-coral/test_data/raw/master/efficientdet_lite0_uint8.tflite' \
+        || { echo "    ⚠  Téléchargement du modèle échoué — mode 'hybrid' indisponible." ; rm -f "${MODEL_FILE}" ; }
+fi
+if [[ ! -f "${LABELS_FILE}" ]]; then
+    wget -q --show-progress -O "${LABELS_FILE}" \
+        'https://raw.githubusercontent.com/google-coral/test_data/master/coco_labels.txt' \
+        || { echo "    ⚠  Téléchargement des labels échoué." ; rm -f "${LABELS_FILE}" ; }
+fi
+
 echo "==> Génération du code d'appairage si nécessaire…"
 # Génère un PIN au format HomeKit XXX-XX-XXX si le champ est vide.
 if grep -qE '^[[:space:]]*pincode:[[:space:]]*""' "${INSTALL_DIR}/config.yaml"; then
@@ -51,6 +73,8 @@ echo "==> Permissions…"
 chown -R "${RUN_USER}:${RUN_USER}" "${INSTALL_DIR}"
 # Accès à la caméra et au GPU.
 usermod -aG video "${RUN_USER}" || true
+# Accès aux groupes caméra/I2C pour libcamera.
+usermod -aG i2c "${RUN_USER}" 2>/dev/null || true
 
 echo "==> Installation du service systemd…"
 sed "s/__USER__/${RUN_USER}/" "${SRC_DIR}/${SERVICE_NAME}.service" \

@@ -17,3 +17,10 @@ homekit:
 advanced:
   profile: baseline    # Profil H.264 : baseline | main | high
   level: 4             # Niveau H.264
+
+detection:
+  mode: off            # off | motion | hybrid (motion+IA)
+  sensitivity: 25      # Seuil de différence de luminance (0–100 ; plus bas = plus sensible)
+  confidence: 0.5      # Score minimum TFLite pour valider une détection de personne (0–1)
+  cooldown: 15         # Secondes avant remise à zéro du capteur Motion après une détection
+  interval: 3          # Secondes entre deux snapshots de détection
