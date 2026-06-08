@@ -4,7 +4,9 @@
 
 Projet open source permettant d'envoyer le flux vidéo d'une caméra CSI (module Pi Camera)
 branchée sur un **Raspberry Pi Zero 2** vers l'application **Maison** d'Apple via **HomeKit**.
+
 *J'ai pu installer pi0 Camera Homekit sur un pi 0 v1, l'installation a été extrêmement lonque (2-3h), mais ca semble fonctionner et être stable*
+
 L'ajout se fait par la saisie d'un code à 8 chiffres ou le scan d'un QRcode, exactement comme une caméra du commerce, et le visionnage en direct est totalement transparent dans l'application Maison.
 
 ## Fonctionnement
