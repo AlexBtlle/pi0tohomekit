@@ -1,4 +1,4 @@
-# pi0tohomekit
+# pi0 Camera Homekit
 
 *[Version française](README.md)*
 
@@ -51,8 +51,8 @@ In practice:
 ## Installation
 
 ```bash
-git clone https://github.com/AlexBtlle/pi0tohomekit.git
-cd pi0tohomekit
+git clone https://github.com/AlexBtlle/pi0-Camera-HomeKit.git
+cd pi0-Camera-HomeKit
 sudo ./install.sh
 ```
 
