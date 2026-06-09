@@ -5,7 +5,9 @@ camera:
   width: 1920          # Largeur max du stream annoncée à HomeKit
   height: 1080         # Hauteur max du stream annoncée à HomeKit
   fps: 30              # Images par seconde
-  bitrate: 6000000     # Débit vidéo en bits/s
+  bitrate: 6000000     # Débit vidéo maximal en bits/s (plafond, protège le WiFi du Pi)
+  min_bitrate: 4000000 # Débit vidéo minimal en bits/s : iOS demande ~300 kbit/s au
+                       # démarrage sans jamais renégocier ; ce plancher garantit la qualité.
   rotation: 0          # Rotation de l'image : 0 ou 180 (90/270 non gérés par libcamera)
   autofocus: none      # none (focus fixe, défaut) | manual (Pi Camera v3) | continuous | auto
 

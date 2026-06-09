@@ -94,8 +94,15 @@ class PiCamera(Camera):
             fps = min(fps, int(cfg["fps"]))
         # HomeKit fournit le bitrate maximal en kbit/s ; rpicam-vid attend des bit/s.
         bitrate = int(stream_config["v_max_bitrate"]) * 1000
-        if cfg.get("bitrate"):
-            bitrate = min(bitrate, int(cfg["bitrate"]))
+        # iOS demande systématiquement un bitrate très bas au démarrage
+        # (~300 kbit/s) et n'envoie jamais de reconfigure pour le relever :
+        # respecter cette demande fige le flux en basse qualité. On applique
+        # donc un plancher (min_bitrate), borné par le plafond (bitrate) qui
+        # protège le lien WiFi du Pi Zero 2. Le client iOS accepte sans
+        # difficulté un flux plus riche que sa demande initiale.
+        cap = int(cfg.get("bitrate", 4_000_000))
+        floor = min(int(cfg.get("min_bitrate", 2_000_000)), cap)
+        bitrate = max(min(bitrate, cap), floor)
 
         profile = _PROFILE_TO_RPICAM.get(
             stream_config.get("v_profile_id"), cfg.get("profile", "baseline")
