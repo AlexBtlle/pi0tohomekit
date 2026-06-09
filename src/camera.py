@@ -202,6 +202,10 @@ class PiCamera(Camera):
         # self.sessions, qui appartient à pyhap.
         session_info["rpicam_proc"] = rpicam_proc
         session_info["ffmpeg_proc"] = ffmpeg_proc
+        # On mémorise la commande rpicam-vid effective : reconfigure_stream s'en
+        # sert pour ne relancer la capture que si les paramètres ont réellement
+        # changé (résolution, bitrate, fps…).
+        session_info["rpicam_cmd"] = rpicam_cmd
         return True
 
     async def stop_stream(self, session_info):
@@ -219,10 +223,37 @@ class PiCamera(Camera):
             except ProcessLookupError:
                 pass
 
-    def reconfigure_stream(self, session_info, stream_config):
-        # La reconfiguration à chaud n'est pas nécessaire pour un flux en direct :
-        # HomeKit renégocie une nouvelle session si les paramètres changent.
-        return True
+    async def _wait_processes_exit(self, session_info, timeout=5.0):
+        # Attend que rpicam-vid (et ffmpeg) se terminent réellement avant de
+        # relancer une capture. rpicam-vid garde un accès exclusif à la caméra ;
+        # relancer trop tôt échouerait avec « camera in use ». On sonde sans
+        # bloquer la boucle asyncio (proc.wait() serait bloquant).
+        deadline = timeout
+        for key in ("ffmpeg_proc", "rpicam_proc"):
+            proc = session_info.get(key)
+            if proc is None:
+                continue
+            while proc.poll() is None and deadline > 0:
+                await asyncio.sleep(0.1)
+                deadline -= 0.1
+            if proc.poll() is None:
+                # Toujours vivant après le délai : on force l'arrêt.
+                proc.kill()
+
+    async def reconfigure_stream(self, session_info, stream_config):
+        # pyhap fait ``await self.reconfigure_stream(...)`` : la méthode doit être
+        # une coroutine. HomeKit envoie un reconfigure notamment pour augmenter le
+        # bitrate après un démarrage volontairement prudent (~300 kbit/s). Comme
+        # rpicam-vid fixe son bitrate au lancement, honorer ce changement impose de
+        # relancer la capture avec les nouveaux paramètres.
+        new_cmd = self._rpicam_cmd(stream_config)
+        if new_cmd == session_info.get("rpicam_cmd"):
+            # Aucun paramètre d'encodage n'a changé : inutile de couper le flux.
+            return True
+        logger.info("Reconfiguration du flux %s", session_info["id"])
+        await self.stop_stream(session_info)
+        await self._wait_processes_exit(session_info)
+        return await self.start_stream(session_info, stream_config)
 
     # -- Vignette ------------------------------------------------------------------
 
