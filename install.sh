@@ -56,7 +56,11 @@ echo "==> Installation du service systemd…"
 sed "s/__USER__/${RUN_USER}/" "${SRC_DIR}/${SERVICE_NAME}.service" \
     > "/etc/systemd/system/${SERVICE_NAME}.service"
 systemctl daemon-reload
-systemctl enable --now "${SERVICE_NAME}"
+systemctl enable "${SERVICE_NAME}"
+# restart (et non « enable --now ») : sur une réinstallation, le service est
+# déjà actif et « --now » ne le relancerait pas — l'ancien code resterait en
+# mémoire. restart garantit que le code fraîchement copié est bien chargé.
+systemctl restart "${SERVICE_NAME}"
 
 echo
 echo "==> Installation terminée."
