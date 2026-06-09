@@ -130,6 +130,10 @@ class PiCamera(Camera):
         if autofocus and autofocus.lower() not in ("none", "disabled", "false"):
             cmd += ["--autofocus-mode", autofocus]
 
+        awb = cfg.get("awb", "auto")
+        if awb and awb.lower() != "auto":
+            cmd += ["--awb", awb]
+
         cmd += ["-o", "-"]
         return cmd
 
