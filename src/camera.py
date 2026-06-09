@@ -145,7 +145,7 @@ class PiCamera(Camera):
             "-hide_banner",
             "-loglevel", "warning",
             "-f", "h264",
-            "-r", str(stream_config.get("fps", 30)),
+            "-use_wallclock_as_timestamps", "1",
             "-i", "-",
             "-c:v", "copy",
             "-an",
