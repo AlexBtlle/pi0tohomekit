@@ -5,6 +5,8 @@
 Open-source project that streams the video feed of a CSI camera (Pi Camera module)
 connected to a **Raspberry Pi Zero 2** to Apple's **Home** app via **HomeKit**.
 
+*I was able to install pi0-Camera-HomeKit on a Pi Zero v1, the installation took an extremely long time (2–3h), but it seems to work and run stable.*
+
 Adding the camera is done by entering an 8-digit code or scanning a QR code, just like a
 commercial camera, and live viewing is completely seamless in the Home app.
 
