@@ -2,10 +2,10 @@
 # Modifiez ces valeurs selon votre matériel et vos préférences.
 
 camera:
-  width: 1280          # Largeur par défaut de la capture
-  height: 720          # Hauteur par défaut de la capture
-  fps: 20              # Images par seconde
-  bitrate: 4000000     # Débit vidéo en bits/s (gardez <= 4 Mbit/s sur Pi Zero 2)
+  width: 1920          # Largeur max du stream annoncée à HomeKit
+  height: 1080         # Hauteur max du stream annoncée à HomeKit
+  fps: 30              # Images par seconde
+  bitrate: 6000000     # Débit vidéo en bits/s
   rotation: 0          # Rotation de l'image : 0 ou 180 (90/270 non gérés par libcamera)
   autofocus: none      # none (focus fixe, défaut) | manual (Pi Camera v3) | continuous | auto
 
