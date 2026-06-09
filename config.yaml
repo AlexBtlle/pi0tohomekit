@@ -8,7 +8,7 @@ camera:
   bitrate: 6000000     # Débit vidéo en bits/s
   rotation: 0          # Rotation de l'image : 0 ou 180 (90/270 non gérés par libcamera)
   autofocus: none      # none (focus fixe, défaut) | manual (Pi Camera v3) | continuous | auto
-  awb: greyworld       # Balance des blancs : auto | greyworld (capteurs NoIR avec LEDs IR)
+  awb: auto            # Balance des blancs : auto | incandescent | tungsten | fluorescent | indoor | daylight | cloudy
 
 homekit:
   name: "Pi Camera"    # Nom affiché dans l'application Maison
