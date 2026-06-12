@@ -1,6 +1,8 @@
 # pi0 Camera Homekit
 
 *[Version française](README.md)*
+Ce projet ne prend en charge que le streaming en direct de la caméra, si vous souhaitez utiliser la détection de mouvement, allez faire un tour sur cet autre projet : Pi4 IA Homekit camera (aussi compatible avec le Pi0 2w).
+This project only takes in charge, live streaming from the camera, if you want to use Homekit motion detection, have look at this repo : [Pi4 IA Homekit camera](https://github.com/AlexBtlle/pi4-IA-Homekit-Camera) (also runnable on Pi0 2W)
 
 Open-source project that streams the video feed of a CSI camera (Pi Camera module)
 connected to a **Raspberry Pi Zero 2** to Apple's **Home** app via **HomeKit**.
