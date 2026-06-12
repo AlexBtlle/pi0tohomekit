@@ -47,6 +47,17 @@ if grep -qE '^[[:space:]]*pincode:[[:space:]]*""' "${INSTALL_DIR}/config.yaml"; 
     echo "    Code d'appairage généré : ${PIN}"
 fi
 
+echo "==> Mémoire GPU…"
+# 128 MB est suffisant pour l'encodage H.264 matériel (VideoCore IV/VI).
+# Libérer davantage de RAM pour Python et ffmpeg sur le Pi Zero W (512 MB total).
+CONFIG_TXT="/boot/firmware/config.txt"
+[[ ! -f "${CONFIG_TXT}" ]] && CONFIG_TXT="/boot/config.txt"
+if ! grep -q "^gpu_mem=" "${CONFIG_TXT}"; then
+    echo "gpu_mem=128" >> "${CONFIG_TXT}"
+else
+    sed -i "s/^gpu_mem=.*/gpu_mem=128/" "${CONFIG_TXT}"
+fi
+
 echo "==> Permissions…"
 chown -R "${RUN_USER}:${RUN_USER}" "${INSTALL_DIR}"
 # Accès à la caméra et au GPU.

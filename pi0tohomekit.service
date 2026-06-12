@@ -10,6 +10,7 @@ ExecStart=/opt/pi0tohomekit/venv/bin/python -m src.main
 Restart=on-failure
 RestartSec=5
 User=__USER__
+Nice=5
 
 [Install]
 WantedBy=multi-user.target

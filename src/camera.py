@@ -152,6 +152,7 @@ class PiCamera(Camera):
             "-hide_banner",
             "-loglevel", "warning",
             "-f", "h264",
+            "-threads", "1",
             "-i", "-",
             "-c:v", "copy",
             "-an",
